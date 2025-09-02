@@ -76,7 +76,7 @@ do -- Players
         CurrentOption = {"___"},
         MultipleOptions = false,
         Callback = function(p)p=p[1]
-            player = Players:FindFirstChild(p)
+            player = Players:FindFirstChild(p) or p
         end
     })
 
@@ -96,7 +96,10 @@ do -- Players
             local original: CFrame = player.Character:GetPivot()
 
             couch.Parent = LPlayer.Character
-            repeat LPlayer.Character:PivotTo(player.Character:GetPivot() * CFrame.new(0, -5, 0)) task.wait() until player.Character:FindFirstChildOfClass("Humanoid").Sit == true
+            repeat 
+                LPlayer.Character:PivotTo(player.Character:GetPivot() * CFrame.new(0, -5, 0))
+                task.wait() 
+            until player.Character:FindFirstChildOfClass("Humanoid").Sit == true
             LPlayer.Character:PivotTo(pos)
             task.wait(1)
             couch.Parent = LPlayer.Backpack
@@ -107,47 +110,48 @@ do -- Players
         end
     end
 
-    Tabs.Players:CreateButton({
-        Name = "Kill",
-        Callback = function()
+    local Actions = {
+        Kill = function(player: Player)
             Bring(player, CFrame.new(1265, -320, 9147))
-        end
-    })
-
-    Tabs.Players:CreateButton({
-        Name = "Jail",
-        Callback = function()
+        end,
+        Jail = function(player: Player)
             Bring(player, CFrame.new(-17, -9, 5))
-        end
-    })
-
-    Tabs.Players:CreateButton({
-        Name = "Bring",
-        Callback = function()
+        end,
+        Bring = function(player: Player)
             if not LPlayer.Character then return end
             Bring(player, LPlayer.Character:GetPivot())
-        end
-    })
-
-    Tabs.Players:CreateButton({
-        Name = "Bring (null zone)",
-        Callback = function()
+        end,
+        ["Bring (null zone)"] = function(player: Player)
             if not LPlayer.Character then return end
             Bring(player, CFrame.new(1e9, 1e9, 1e9))
-        end
-    })
-
-    Tabs.Players:CreateButton({
-        Name = "Goto",
-        Callback = function()
+        end,
+        ["Goto"] = function(player: Player)
             if not player or not player.Character or not LPlayer.Character then return end
             LPlayer.Character:PivotTo(player.Character:GetPivot())
         end
-    })
+    }
+
+
+    for name, callback in Actions do
+        Tabs.Players:CreateButton({
+            Name = name,
+            Callback = function()
+                if player == "[ Everyone ]" then
+                    for _, p: Player in Players:GetPlayers() do
+                        if p.Character and p.Name ~= LPlayer.Name then
+                            callback(p)
+                        end
+                    end
+                else
+                    callback(player)
+                end
+            end
+        })
+    end
 
     function ref()
-        local players = {}
-        for i, v in Players:GetPlayers() do table.insert(players, v.Name) end
+        local players = {"[ Everyone ]"}
+        for i, v in Players:GetPlayers() do if v.Name == LPlayer.Name then continue end table.insert(players, v.Name) end
         PlayerDropdown:Refresh(players)
     end
 
